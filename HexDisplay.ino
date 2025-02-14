@@ -1,13 +1,70 @@
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_NeoMatrix.h>
 #include <math.h>
+#include "StateMachine.h"
+#include "font.h"
 
 #define PIN 12
-#define N_LEDS 147
-#define MAX_BRIGHTNESS 255 // Choose a value between 2 and 255
+#define N_LEDS 145
+#define MAX_BRIGHTNESS 100 // Choose a value between 2 and 255
+
+#define MATRIX_WIDTH 25
+#define MATRIX_HEIGHT 5
+
+
+void drawChar(int column, const uint8_t bitmap[5]) {
+  for (int row = 0; row < 5; ++row) {
+    for (uint8_t b = 0; b < 5; ++b) {
+      bool lit = (bitmap[row]>>b) & 0b1;
+      if (lit) {
+        setPixel(column + 4 - b, row, 255, 0, 0, 100);
+      } else {
+        // If there is a solid background behind
+        //setPixel(column + 4 - b, row, 0, 255, 0, 100);
+      }
+    }
+  }
+}
+int start_index_row_0 = 0;
+int start_index_row_1 = 0;
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(N_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 // Only used for inital blackout operation
 Adafruit_NeoPixel excess_strip = Adafruit_NeoPixel(300, PIN, NEO_GRB + NEO_KHZ800);
+
+StateMachine animationion1(1000, true);
+StateMachine animationion2(350, true);
+StateMachine backgroundAnimation(100, true);
+
+void setPixel(int x, int y, int r, int g, int b, int brightness) {
+  if (x < 0 || y < 0 || x >= MATRIX_WIDTH || y >= MATRIX_HEIGHT) { return; }
+  int location = N_LEDS - y*30 - x - 1;
+  writePixelNoShow(location, r, g, b, brightness); 
+}
+
+void drawStripes(int offset) {
+  for (int i = 0; i < MATRIX_WIDTH; i++) {
+    for (int j = 0; j < MATRIX_HEIGHT; j++) {
+      int r = 0;
+      int g = 0;
+      int b = 0;
+      switch ((i+offset) % 3) {
+        case 0:
+          r = 255;
+          break;
+        case 1:
+          b = 255;
+          break;
+        case 2:
+          g = 255;
+          break;
+      }
+      setPixel(i,j,r,g,b,100);
+    }
+  }
+  strip.show();
+  delay(50);
+}
 
 void handleFire() {
   int heat[N_LEDS];
@@ -69,13 +126,59 @@ void lightUpAll() {
   }
 }
 
+static uint8_t animation_state = 0;
+static int column_start = 0;
 
+void setStaticBackground() {
+  strip.fill((0,0, 255), 0, N_LEDS);
+}
+
+void makeSolidBackground() {
+  for (int i = 0; i < MATRIX_WIDTH; i++) {
+    for (int j = 0; j < MATRIX_HEIGHT; j++) {
+      int r = 0;
+      int g = 0;
+      int b = 255;
+      setPixel(i,j,r,g,b,100);
+    }
+  }
+}
+
+void drawBg(){
+  makeSolidBackground();
+}
 
 void setup() {
   // put your setup code here, to run once:
+  
 
 }
 
 void loop() {
-  handleFire();
+  if (animationion2.update()) {
+    column_start--;
+
+    if (column_start<-60) {
+      column_start = 25;
+    }
+  }
+
+  if (backgroundAnimation.update()) {
+    // TODO change bg params
+  }
+
+  strip.clear();
+  drawBg();
+  drawChar(column_start+0, bitmap_M);
+  drawChar(column_start+6, bitmap_O);
+  drawChar(column_start+12, bitmap_C);
+  drawChar(column_start+18, bitmap_O);
+  drawChar(column_start+24, bitmap_M);
+  drawChar(column_start+30, bitmap_A);
+  drawChar(column_start+36, bitmap_K);
+  drawChar(column_start+42, bitmap_E);
+  drawChar(column_start+48, bitmap_R);
+  drawChar(column_start+54, bitmap_S);
+  strip.show();
+  delay(50);
 }

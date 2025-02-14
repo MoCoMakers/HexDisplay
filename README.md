@@ -8,3 +8,8 @@ Wire the a 5V power supply to the 5V pin of the ESP32, and GND. Also wire the 5V
 Count the length of your strip and update `N_LEDS` to match that.
 
 Control the power draw by setting a `MAX_BRIGHTNESS` value between 0 and 255.
+
+## Acknowledgements
+Credit goes to Tim for the 3D Printed design an inspiration.
+
+The StateMachine code comes from https://github.com/twrackers/StateMachine-library
